@@ -1,0 +1,118 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SQLite;
+
+namespace ConsoleAppSQLite1 { 
+
+    class Program
+    {
+
+        static string createCustomerTableQuery = @"CREATE TABLE IF NOT EXISTS Customer(
+                                                        ID          NVARCHAR(30) NOT NULL PRIMARY KEY,
+                                                        FirstName   NVARCHAR(30) NOT NULL,
+                                                        LastName    NVARCHAR(30) NOT NULL,
+                                                        City        NVARCHAR(40) NOT NULL,
+                                                        Email       NVARCHAR(45) NOT NULL,
+                                                        Gender      NVARCHAR(10) NOT NULL
+                                                        
+                                                 );";
+        static void Main(string[] args)
+        {
+            bool isDBCreated = CreateDB("demoDb.db");
+            bool isDBTableCreated = CreateTableBySQLScript(createCustomerTableQuery);
+            if (isDBCreated && isDBTableCreated)
+            {
+                CreateCustomer("Emily", "Jones", "1548", "Los Angeles", "emilyjones@gmail.com", "female");
+                CreateCustomer("Jason", "Martin", "3222145", "Paris", "jason_martin@gmail.com", "male");
+                CreateCustomer("Shine", "Murphy", "65887", "Istanbul", "shinemur@hotmail.com", "female");
+                CreateCustomer("Green", "Jones", "5477896", "Tokyo", "green.jones@gmail.com", "male");
+                CreateCustomer("Adam", "Wilson", "54877", "Dublin", "adamwil@outlook.com", "male");
+                CreateCustomer("Maly", "Smith", "158999","San Sebastian", "smithma@hotmail.com", "female");
+            }
+
+            foreach (var customer in GetAllCustomer())
+            {
+                Console.WriteLine(customer);
+                Console.WriteLine("********");
+            }
+            Console.ReadLine();
+        }
+
+        private static bool CreateDB(string dbName) {
+            if (!String.IsNullOrEmpty(dbName)) {
+                SQLiteConnection.CreateFile(dbName);
+                return true;
+            }
+            return false;
+        }
+
+        private static bool CreateTableBySQLScript(string sqlQuery) {
+            if (!String.IsNullOrEmpty(sqlQuery)) {
+                using (SQLiteConnection conn = new SQLiteConnection("DATA SOURCE=demoDb.db")) {
+                    using (SQLiteCommand cmd = new SQLiteCommand(conn)) {
+                        conn.Open();
+                        cmd.CommandText = sqlQuery;
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            return false;
+        
+        }
+
+        private static void CreateCustomer(string firstName, string lastName, string id, string city, string email, string gender) {
+            using (SQLiteConnection conn = new SQLiteConnection("DATA SOURCE=demoDb.db")) {
+                using (SQLiteCommand cmd = new SQLiteCommand(conn))
+                {
+                    conn.Open();
+                    cmd.CommandText = "INSERT INTO Customer(firstName, lastName, id, city, email, gender) VALUES ('" + firstName + "' , '" + lastName + "' , '" + id + "' , '" + city + "' , '" + email + "' ,'" + gender + "')";
+                    cmd.ExecuteNonQuery();
+                }
+                
+            }
+            
+        }
+    
+        private static List<string> GetAllCustomer()
+        {
+            var result = new List<string>();
+            using (SQLiteConnection conn = new SQLiteConnection("DATA SOURCE=demoDb.db"))
+            {
+                using (SQLiteCommand cmd = new SQLiteCommand(conn))
+                {
+                    conn.Open();
+                    cmd.CommandText = "SELECT * FROM Customer";
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            StringBuilder sb = new StringBuilder();
+
+                            //sb.Append("Id: " + reader.GetString(1));
+                            //sb.Append("\n");
+                            sb.Append("First Name: " + reader.GetString(1));
+                            sb.Append("\n");
+                            sb.Append("Last Name: " + reader.GetString(2));
+                            sb.Append("\n");
+                            sb.Append("City: " + reader.GetString(3));
+                            sb.Append("\n"); 
+                            sb.Append("Email: " + reader.GetString(4));
+                            sb.Append("\n");
+                            sb.Append("Gender: " + reader.GetString(5));
+                            sb.Append("\n");
+
+                            result.Add(sb.ToString());
+                        }
+                        conn.Close();
+                    }
+                }
+            }
+            return result;
+        }
+    }
+}
